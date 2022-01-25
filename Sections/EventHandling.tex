@@ -1,0 +1,124 @@
+\section{Event Handling}
+Reaktive Systeme sind per definition asynchron, dH sie treten zu einem beliebigen Zeitpunkt ein.
+
+\subsection{C-Implementation}
+\textbf{main.h}
+\begin{lstlisting}
+#include "framework.h"
+	
+void onCallback(int param) {
+	printf("Callback executed");
+}
+	
+int main(void) {
+	registerCallback(onCallback);
+	run();
+}
+\end{lstlisting}
+
+\textbf{framework.h}
+\begin{lstlisting}
+typdef void (*Callback)(int);
+
+static Callback notify;
+
+void registerCallback(Callback c) {
+	notify = c;
+}
+
+void run() {
+	if (notify != 0) {
+		notify(4);
+	}
+}
+\end{lstlisting}
+
+\subsection{C++ Implementation I}
+\textbf{main.h}
+\begin{lstlisting}
+#include "framework.h"
+
+class Part {
+public: 
+	void onCallback(int param) {
+		printf("Callback executed");
+	}
+};
+
+int main(void) {
+	Part p;
+	Framework f;
+	
+	f.registerCallback(p, &Part::onCallback);
+	f.run();
+}
+\end{lstlisting}
+
+\textbf{framework.h}
+\begin{lstlisting}
+
+class Part; // Class Forward-Declaration
+
+class Framework {
+public:
+	void registerCallback(Part& p, void (Part::*pFct)(int)) {
+		part = &p;
+		callback = pFct;
+	}
+	
+	void run() {
+		(part->*callback)(5);
+	}
+
+private:
+	Part* part;
+	void (Part::*callback)(int);
+};
+\end{lstlisting}
+
+\subsection{C++ Implementation II}
+\textbf{main.h}
+\begin{lstlisting}
+#include "framework.h"
+
+class Part : public IPart {
+public: 
+	virtual void onCallback(int param) override {
+		printf("Callback executed");
+	}
+};
+
+int main(void) {
+	Part p;
+	Framework f;
+	
+	f.registerCallback(p);
+	f.run();
+}
+\end{lstlisting}
+
+\textbf{framework.h}
+\begin{lstlisting}
+
+class IPart {
+public:
+	virtual void onCallback(int param) = 0;
+	virtual ~IPart() {};	
+};
+
+class Framework {
+	public:
+	void registerCallback(Part& p) {
+		part = &p;
+	}
+	
+	void run() {
+		if (part != nullptr) {
+			part->onCallback(5);
+		}
+	}
+	
+	private:
+	IPart* part;
+};
+\end{lstlisting}
